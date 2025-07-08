@@ -1,0 +1,144 @@
+INSERT INTO orders (customer_id,order_date,total_amount)
+VALUES
+    (1,'2024-01-15',914.99),
+    (1,'2024-04-18',614.50),
+    (5,'2022-11-01',79.99);
+
+INSERT INTO order_items (order_id,product_id,quantity)
+VALUES
+    (15,1,1),
+    (15,5,1),
+    (16,2,1),
+    (17,4,1);
+
+Challenge 1 : Jointures entre Tables
+
+SELECT
+    o.order_id,
+    o.customer_id,
+    o.order_date,
+    o.total_amount,
+    c.first_name,
+    c.last_name
+FROM orders o
+JOIN
+    customers c on o.customer_id=c.customer_id
+
+
+SELECT
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.email,
+    c.phone_number
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id
+WHERE o.order_id IS NULL;
+    
+SELECT
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.email,
+    c.phone_number,
+    COUNT(o.order_id) as order_count
+FROM orders o
+JOIN
+    customers c on o.customer_id=c.customer_id
+GROUP BY
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.email,
+    c.phone_number
+
+Challenge 2 : Agrégation de Données
+
+SELECT SUM(total_amount) AS total_sales FROM orders
+
+SELECT COUNT(customer_id) AS total_clients FROM customers
+
+SELECT AVG(total_amount) AS average_sales FROM orders
+
+Challenge 3 : Groupement de Données
+
+SELECT customer_id, SUM (total_amount) AS total_sales FROM orders GROUP BY customer_id
+
+ALTER TABLE orders
+ADD COLUMN mois INT,
+ADD COLUMN annee INT;
+
+UPDATE orders
+SET
+   mois=EXTRACT (MONTH FROM order_date),
+   annee=EXTRACT (YEAR FROM order_date);
+
+SELECT COUNT(customer_id) AS nb_commandes, mois, annee FROM orders GROUP BY mois, annee;
+
+SELECT AVG(total_amount) AS average_sales, mois, annee FROM orders GROUP BY mois, annee;
+
+SELECT
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.email,
+    SUM(o.total_amount) as total_sales
+FROM orders o
+JOIN
+    customers c on o.customer_id=c.customer_id
+GROUP BY c.customer_id, c.first_name, c.last_name, c.email
+HAVING SUM(o.total_amount)>1000
+
+Challenge 4 : Sous-Requêtes
+
+SELECT DISTINCT
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.email
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+WHERE o.total_amount > 200
+
+SELECT
+    c.customer_id,
+    c.first_name,
+    c.last_name,
+    c.email,
+    SUM (o.total_amount) AS total_sales
+FROM orders o
+JOIN
+    customers c on o.customer_id=c.customer_id
+GROUP BY c.customer_id, c.first_name, c.last_name,c.email
+ORDER BY total_sales DESC
+LIMIT 1;
+
+SELECT * FROM orders WHERE total_amount> (SELECT AVG(total_amount) FROM orders)
+
+CREATE OR REPLACE VIEW customer_orders_view AS
+SELECT
+      c.customer_id,
+      c.first_name,
+      c.last_name,
+      c.email,
+      c.phone_number,
+      o.order_id,
+      o.order_date,
+      o.total_amount,
+      o.mois,
+      o.annee
+FROM customers c
+JOIN
+     orders o ON c.customer_id=o.customer_id;
+
+SELECT DISTINCT * FROM customer_orders_view WHERE total_amount > 1000
+
+CREATE OR REPLACE VIEW monthly_sales_view AS
+SELECT
+      COUNT(order_id) AS nb_ventes,
+      SUM(total_amount) AS total_sales,
+      mois,
+      annee
+FROM orders
+GROUP BY mois,annee
+
